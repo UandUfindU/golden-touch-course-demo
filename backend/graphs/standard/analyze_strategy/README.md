@@ -1,0 +1,1 @@
+Standard Strategy Analyst Graph (Think Mode). Analyses intent and optimizes strategy.

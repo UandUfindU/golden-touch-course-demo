@@ -1,0 +1,7 @@
+[User Request]
+${user_prompt}
+
+[Expert Analysis & Plan]
+${analysis_report}
+
+CRITICAL: Implement the plan above using available nodes.

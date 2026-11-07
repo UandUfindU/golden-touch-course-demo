@@ -1,0 +1,83 @@
+{
+  "name": "MA Crossover Strategy",
+  "description": "双均线交叉策略 - 短期均线上穿长期均线买入，下穿卖出",
+  "version": "1.0",
+  "nodes": [
+    {
+      "id": "data_source",
+      "type": "data.fetch_crypto",
+      "data": {
+        "symbol": "BTC/USDT",
+        "timeframe": "1h",
+        "limit": 200
+      }
+    },
+    {
+      "id": "ma_fast",
+      "type": "indicator.ma",
+      "data": {
+        "period": 10,
+        "ma_type": "sma",
+        "output_name": "ma_fast"
+      }
+    },
+    {
+      "id": "ma_slow",
+      "type": "indicator.ma",
+      "data": {
+        "period": 20,
+        "ma_type": "sma",
+        "output_name": "ma_slow"
+      }
+    },
+    {
+      "id": "crossover",
+      "type": "indicator.crossover",
+      "data": {
+        "output_name": "cross_signal"
+      }
+    },
+    {
+      "id": "buy_condition",
+      "type": "logic.condition",
+      "data": {
+        "condition_expr": "cross_signal == 1",
+        "output_name": "should_buy"
+      }
+    },
+    {
+      "id": "sell_condition",
+      "type": "logic.condition",
+      "data": {
+        "condition_expr": "cross_signal == -1",
+        "output_name": "should_sell"
+      }
+    },
+    {
+      "id": "buy_signal",
+      "type": "signal.buy",
+      "data": {
+        "quantity": 1.0,
+        "reason": "金叉买入"
+      }
+    },
+    {
+      "id": "sell_signal",
+      "type": "signal.sell",
+      "data": {
+        "quantity": 1.0,
+        "reason": "死叉卖出"
+      }
+    }
+  ],
+  "edges": [
+    {"source": "data_source", "target": "ma_fast", "target_port": "source"},
+    {"source": "data_source", "target": "ma_slow", "target_port": "source"},
+    {"source": "ma_fast", "target": "crossover", "source_port": "values", "target_port": "fast_line"},
+    {"source": "ma_slow", "target": "crossover", "source_port": "values", "target_port": "slow_line"},
+    {"source": "crossover", "target": "buy_condition", "source_port": "crossover"},
+    {"source": "crossover", "target": "sell_condition", "source_port": "crossover"},
+    {"source": "buy_condition", "target": "buy_signal", "source_port": "result", "target_port": "condition"},
+    {"source": "sell_condition", "target": "sell_signal", "source_port": "result", "target_port": "condition"}
+  ]
+}

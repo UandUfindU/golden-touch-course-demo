@@ -1,0 +1,85 @@
+{
+    "name": "RSI Overbought/Oversold Strategy",
+    "description": "RSI超买超卖策略 - RSI<30买入，RSI>70卖出",
+    "version": "1.0",
+    "nodes": [
+        {
+            "id": "data_source",
+            "type": "data.fetch_crypto",
+            "data": {
+                "symbol": "ETH/USDT",
+                "timeframe": "1h",
+                "limit": 200
+            }
+        },
+        {
+            "id": "rsi",
+            "type": "indicator.rsi",
+            "data": {
+                "period": 14,
+                "output_name": "rsi"
+            }
+        },
+        {
+            "id": "oversold_condition",
+            "type": "logic.condition",
+            "data": {
+                "condition_expr": "rsi < 30",
+                "output_name": "is_oversold"
+            }
+        },
+        {
+            "id": "overbought_condition",
+            "type": "logic.condition",
+            "data": {
+                "condition_expr": "rsi > 70",
+                "output_name": "is_overbought"
+            }
+        },
+        {
+            "id": "buy_signal",
+            "type": "signal.buy",
+            "data": {
+                "quantity": 1.0,
+                "reason": "RSI超卖买入"
+            }
+        },
+        {
+            "id": "sell_signal",
+            "type": "signal.sell",
+            "data": {
+                "quantity": 1.0,
+                "reason": "RSI超买卖出"
+            }
+        }
+    ],
+    "edges": [
+        {
+            "source": "data_source",
+            "target": "rsi",
+            "target_port": "source"
+        },
+        {
+            "source": "rsi",
+            "target": "oversold_condition",
+            "source_port": "values"
+        },
+        {
+            "source": "rsi",
+            "target": "overbought_condition",
+            "source_port": "values"
+        },
+        {
+            "source": "oversold_condition",
+            "target": "buy_signal",
+            "source_port": "result",
+            "target_port": "condition"
+        },
+        {
+            "source": "overbought_condition",
+            "target": "sell_signal",
+            "source_port": "result",
+            "target_port": "condition"
+        }
+    ]
+}

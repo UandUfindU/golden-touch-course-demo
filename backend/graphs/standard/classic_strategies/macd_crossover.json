@@ -1,0 +1,106 @@
+{
+    "name": "MACD Crossover Strategy",
+    "description": "MACD金叉死叉策略 - MACD线上穿信号线买入，下穿卖出",
+    "version": "1.1",
+    "notes": "Fixed: Correct edge connections for macd_line and signal_line to crossover",
+    "nodes": [
+        {
+            "id": "data_source",
+            "type": "data.fetch_crypto",
+            "data": {
+                "symbol": "BTC/USDT",
+                "timeframe": "4h",
+                "limit": 200
+            }
+        },
+        {
+            "id": "macd",
+            "type": "indicator.macd",
+            "data": {
+                "fast_period": 12,
+                "slow_period": 26,
+                "signal_period": 9
+            }
+        },
+        {
+            "id": "macd_crossover",
+            "type": "indicator.crossover",
+            "data": {
+                "output_name": "macd_cross"
+            }
+        },
+        {
+            "id": "buy_condition",
+            "type": "logic.condition",
+            "data": {
+                "condition_expr": "macd_cross == 1",
+                "output_name": "macd_bullish"
+            }
+        },
+        {
+            "id": "sell_condition",
+            "type": "logic.condition",
+            "data": {
+                "condition_expr": "macd_cross == -1",
+                "output_name": "macd_bearish"
+            }
+        },
+        {
+            "id": "buy_signal",
+            "type": "signal.buy",
+            "data": {
+                "quantity": 1.0,
+                "reason": "MACD金叉买入"
+            }
+        },
+        {
+            "id": "sell_signal",
+            "type": "signal.sell",
+            "data": {
+                "quantity": 1.0,
+                "reason": "MACD死叉卖出"
+            }
+        }
+    ],
+    "edges": [
+        {
+            "source": "data_source",
+            "target": "macd",
+            "target_port": "source"
+        },
+        {
+            "source": "macd",
+            "target": "macd_crossover",
+            "source_port": "macd_line",
+            "target_port": "fast_line"
+        },
+        {
+            "source": "macd",
+            "target": "macd_crossover",
+            "source_port": "signal_line",
+            "target_port": "slow_line"
+        },
+        {
+            "source": "macd_crossover",
+            "target": "buy_condition",
+            "source_port": "crossover"
+        },
+        {
+            "source": "macd_crossover",
+            "target": "sell_condition",
+            "source_port": "crossover"
+        },
+        {
+            "source": "buy_condition",
+            "target": "buy_signal",
+            "source_port": "result",
+            "target_port": "condition"
+        },
+        {
+            "source": "sell_condition",
+            "target": "sell_signal",
+            "source_port": "result",
+            "target_port": "condition"
+        }
+    ]
+}

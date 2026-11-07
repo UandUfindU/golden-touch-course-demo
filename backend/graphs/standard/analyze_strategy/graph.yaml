@@ -1,0 +1,153 @@
+nodes:
+- id: in_graph
+  type: structure.input
+  data:
+    name: current_graph
+- id: in_prompt
+  type: structure.input
+  data:
+    name: prompt
+- id: d2p
+  type: engine.dag_to_python
+  data: {}
+- id: in_model
+  type: structure.input
+  data:
+    name: model
+- id: retriever
+  type: tool.llm.tool_retriever
+  data:
+    scope: strategy
+    output_format: documentation
+    include_roles: true
+- id: prompt_vars
+  type: utility.dict_builder
+  data: {}
+- id: analyze_prompt_fmt
+  type: logic.prompt_formatter
+  data:
+    template: file://assets/analysis_system_prompt.txt
+- id: msg_bld_vars
+  type: utility.dict_builder
+  data: {}
+- id: msg_bld
+  type: utility.structure_builder
+  data:
+    template:
+    - role: user
+      content: ${content}
+- id: llm_analyze
+  type: tool.llm.chat
+  data:
+    model: glm-4-flash
+    temperature: 0.4
+    max_tokens: 4096
+- id: enhance_vars
+  type: utility.dict_builder
+  data: {}
+- id: enhance_fmt
+  type: logic.prompt_formatter
+  data:
+    template: file://assets/builder_instruction_prompt.txt
+- id: builder
+  type: standard.build_strategy
+  data:
+    max_retries: 10
+- id: out_dag
+  type: structure.output
+  data:
+    name: dag
+- id: out_msg
+  type: structure.output
+  data:
+    name: message
+- id: out_succ
+  type: structure.output
+  data:
+    name: success
+- id: out_thought
+  type: structure.output
+  data:
+    name: thought_process
+edges:
+- source: in_graph
+  target: d2p
+  source_port: value
+  target_port: dag
+- source: d2p
+  target: prompt_vars
+  source_port: python_code
+  target_port: current_graph_as_python
+- source: in_prompt
+  target: prompt_vars
+  source_port: value
+  target_port: user_prompt
+- source: retriever
+  target: prompt_vars
+  source_port: documentation
+  target_port: nodes_documentation
+- source: prompt_vars
+  target: analyze_prompt_fmt
+  source_port: result
+  target_port: variables
+- source: analyze_prompt_fmt
+  target: msg_bld_vars
+  source_port: prompt
+  target_port: content
+- source: msg_bld_vars
+  target: msg_bld
+  source_port: result
+  target_port: variables
+- source: msg_bld
+  target: llm_analyze
+  source_port: result
+  target_port: messages
+- source: in_model
+  target: llm_analyze
+  source_port: value
+  target_port: model
+- source: in_prompt
+  target: enhance_vars
+  source_port: value
+  target_port: user_prompt
+- source: llm_analyze
+  target: enhance_vars
+  source_port: response
+  target_port: analysis_report
+- source: enhance_vars
+  target: enhance_fmt
+  source_port: result
+  target_port: variables
+- source: enhance_fmt
+  target: builder
+  source_port: prompt
+  target_port: prompt
+- source: in_graph
+  target: builder
+  source_port: value
+  target_port: current_graph
+- source: in_model
+  target: builder
+  source_port: value
+  target_port: model
+- source: builder
+  target: out_dag
+  source_port: dag
+  target_port: value
+- source: llm_analyze
+  target: out_msg
+  source_port: response
+  target_port: value
+- source: builder
+  target: out_succ
+  source_port: success
+  target_port: value
+- source: builder
+  target: out_thought
+  source_port: thought_process
+  target_port: value
+metadata:
+  name: standard.analyze_strategy
+  category: AI
+  description: Standard Strategy Analyst Graph (Think Mode). Analyses intent and optimizes
+    strategy.

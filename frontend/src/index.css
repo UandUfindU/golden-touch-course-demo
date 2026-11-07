@@ -1,0 +1,58 @@
+@import "tailwindcss";
+@import "@xyflow/react/dist/style.css";
+
+@theme static {
+  --color-page: #f7fbf7;
+  --color-canvas: #eef7ef;
+  --color-surface: #ffffff;
+  --color-subtle: #f3f8f4;
+  --color-hover: #e5f1e8;
+  --color-line: #d4e5d8;
+  --color-line-strong: #b3ccba;
+  --color-ink: #182f22;
+  --color-body: #314c3b;
+  --color-muted: #4e6956;
+  --color-quiet: #607967;
+  --color-brand: #216740;
+  --color-brand-hover: #185332;
+  --color-brand-soft: #e0f2e4;
+  --color-brand-ink: #245c39;
+  --color-control: #9a681d;
+  --color-scrim: #254332;
+}
+
+body {
+  margin: 0;
+  font-family: "Inter", system-ui, Avenir, Helvetica, Arial, sans-serif;
+  background-color: var(--color-page);
+  color: var(--color-ink);
+  min-height: 100vh;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+#root {
+  height: 100vh;
+  display: flex;
+}
+
+.react-flow__controls-button {
+  background: var(--color-surface);
+  border-color: var(--color-line);
+  color: var(--color-ink);
+}
+
+.react-flow__controls-button:hover {
+  background: var(--color-hover);
+}
+
+.react-flow__edge-path {
+  stroke: var(--color-brand);
+  stroke-width: 2;
+}
+
+* {
+  scrollbar-color: var(--color-line-strong) var(--color-subtle);
+}

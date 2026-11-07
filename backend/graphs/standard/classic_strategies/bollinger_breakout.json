@@ -1,0 +1,89 @@
+{
+    "name": "Bollinger Bands Breakout Strategy",
+    "description": "布林带突破策略 - 价格触及下轨买入，触及上轨卖出",
+    "version": "1.1",
+    "notes": "Fixed: Use current_lower/current_upper from bollinger output",
+    "nodes": [
+        {
+            "id": "data_source",
+            "type": "data.fetch_crypto",
+            "data": {
+                "symbol": "ETH/USDT",
+                "timeframe": "1h",
+                "limit": 200
+            }
+        },
+        {
+            "id": "bollinger",
+            "type": "indicator.bollinger_bands",
+            "data": {
+                "period": 20,
+                "std_dev": 2.0,
+                "output_name": "bb"
+            }
+        },
+        {
+            "id": "buy_condition",
+            "type": "logic.condition",
+            "data": {
+                "condition_expr": "close <= bb_lower",
+                "output_name": "touch_lower"
+            }
+        },
+        {
+            "id": "sell_condition",
+            "type": "logic.condition",
+            "data": {
+                "condition_expr": "close >= bb_upper",
+                "output_name": "touch_upper"
+            }
+        },
+        {
+            "id": "buy_signal",
+            "type": "signal.buy",
+            "data": {
+                "quantity": 1.0,
+                "reason": "触及下轨买入"
+            }
+        },
+        {
+            "id": "sell_signal",
+            "type": "signal.sell",
+            "data": {
+                "quantity": 1.0,
+                "reason": "触及上轨卖出"
+            }
+        }
+    ],
+    "edges": [
+        {
+            "source": "data_source",
+            "target": "bollinger",
+            "target_port": "data"
+        },
+        {
+            "source": "bollinger",
+            "target": "buy_condition",
+            "source_port": "current_lower",
+            "target_port": "bb_lower"
+        },
+        {
+            "source": "bollinger",
+            "target": "sell_condition",
+            "source_port": "current_upper",
+            "target_port": "bb_upper"
+        },
+        {
+            "source": "buy_condition",
+            "target": "buy_signal",
+            "source_port": "result",
+            "target_port": "condition"
+        },
+        {
+            "source": "sell_condition",
+            "target": "sell_signal",
+            "source_port": "result",
+            "target_port": "condition"
+        }
+    ]
+}

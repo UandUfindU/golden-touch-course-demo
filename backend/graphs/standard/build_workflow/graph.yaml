@@ -1,0 +1,199 @@
+nodes:
+- id: in_prompt
+  type: structure.input
+  data:
+    name: prompt
+- id: in_graph
+  type: structure.input
+  data:
+    name: current_graph
+- id: d2p
+  type: engine.dag_to_python
+  data: {}
+- id: in_model
+  type: structure.input
+  data:
+    name: model
+- id: retriever
+  type: tool.llm.tool_retriever
+  data:
+    scope: workflow
+    output_format: documentation
+    include_roles: true
+- id: prompt_vars
+  type: utility.dict_builder
+  data: {}
+- id: prompt_fmt
+  type: logic.prompt_formatter
+  data:
+    template: file://assets/system_prompt.txt
+- id: msg_vars
+  type: utility.dict_builder
+  data: {}
+- id: init_msgs
+  type: utility.structure_builder
+  data:
+    template:
+    - role: system
+      content: ${sys_prompt}
+    - role: user
+      content: ${user_prompt}
+- id: retry
+  type: flow.retry
+  data:
+    max_retries: 5
+    break_condition: success
+    feedback_key: feedback
+    history_input_key: messages
+    graph:
+      nodes:
+      - id: in_msg
+        type: structure.input
+        data:
+          name: messages
+      - id: in_model
+        type: structure.input
+        data:
+          name: model
+      - id: llm
+        type: tool.llm.chat
+        data:
+          model: glm-4-flash
+          provider: glm
+          temperature: 0.2
+          max_tokens: 4096
+      - id: parser
+        type: llm.response_parser
+        data:
+          parse_mode: code
+      - id: c2d
+        type: tool.llm.code_to_dag
+        data: {}
+      - id: validator
+        type: utility.graph_validator
+        data: {}
+      - id: feedback_bld
+        type: utility.structure_builder
+        data:
+          template:
+          - role: assistant
+            content: ${llm_response}
+          - role: user
+            content: 'Error: ${error_msg}
+
+              CRITICAL FIX REQUIRED: Check node parameters and connection logic.
+
+              Please regenerate the code.'
+      - id: feedback_vars
+        type: utility.dict_builder
+        data: {}
+      - id: out_dag
+        type: structure.output
+        data:
+          name: dag
+      - id: out_succ
+        type: structure.output
+        data:
+          name: success
+      - id: out_feed
+        type: structure.output
+        data:
+          name: feedback
+      edges:
+      - source: in_msg
+        target: llm
+        source_port: value
+        target_port: messages
+      - source: in_model
+        target: llm
+        source_port: value
+        target_port: model
+      - source: llm
+        target: parser
+        source_port: response
+        target_port: llm_output
+      - source: parser
+        target: c2d
+        source_port: first_code_block
+        target_port: code
+      - source: c2d
+        target: validator
+        source_port: dag
+        target_port: graph
+      - source: llm
+        target: feedback_vars
+        source_port: response
+        target_port: llm_response
+      - source: validator
+        target: feedback_vars
+        source_port: error
+        target_port: error_msg
+      - source: feedback_vars
+        target: feedback_bld
+        source_port: result
+        target_port: variables
+      - source: c2d
+        target: out_dag
+        source_port: dag
+        target_port: value
+      - source: validator
+        target: out_succ
+        source_port: is_valid
+        target_port: value
+      - source: feedback_bld
+        target: out_feed
+        source_port: result
+        target_port: value
+- id: final_out
+  type: structure.output
+  data:
+    name: dag
+edges:
+- source: in_graph
+  target: d2p
+  source_port: value
+  target_port: dag
+- source: d2p
+  target: prompt_vars
+  source_port: python_code
+  target_port: current_graph_as_python
+- source: retriever
+  target: prompt_vars
+  source_port: documentation
+  target_port: nodes_documentation
+- source: retriever
+  target: prompt_vars
+  source_port: example_code
+  target_port: example_code
+- source: prompt_vars
+  target: prompt_fmt
+  source_port: result
+  target_port: variables
+- source: prompt_fmt
+  target: msg_vars
+  source_port: prompt
+  target_port: sys_prompt
+- source: in_prompt
+  target: msg_vars
+  source_port: value
+  target_port: user_prompt
+- source: msg_vars
+  target: init_msgs
+  source_port: result
+  target_port: variables
+- source: init_msgs
+  target: retry
+  source_port: result
+  target_port: messages
+- source: in_model
+  target: retry
+  source_port: value
+  target_port: model
+- source: retry
+  target: final_out
+  source_port: final_output
+  target_port: value
+metadata:
+  name: standard.build_workflow
+  category: AI
+  description: Standard Workflow Builder Graph (Online Layer). Orchestrates Data, Strategy, and Execution.
